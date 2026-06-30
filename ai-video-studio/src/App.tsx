@@ -146,6 +146,8 @@ export default function App() {
               activeScene={activeScene}
               isPlaying={isPlaying}
               onTogglePlay={() => setIsPlaying(!isPlaying)}
+              onPrevScene={() => setActiveScene(Math.max(0, activeScene - 1))}
+              onNextScene={() => setActiveScene(Math.min(project.scenes.length - 1, activeScene + 1))}
             />
           </div>
           <TimelinePanel

@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useRef } from 'react'
 import {
   Sparkles, Wand2, Plus, Trash2, ArrowUp, ArrowDown, Clock, Loader2,
+  Image as ImageIcon, Upload, X,
 } from 'lucide-react'
 import { Input, Select, Btn } from '../ui'
 import { ANIMATION_TYPES } from '../../lib/constants'
@@ -112,6 +114,34 @@ Generate 5 scenes. Respond ONLY with a JSON array, no markdown, no backticks, no
       ;[s[from], s[to]] = [s[to], s[from]]
       return { ...p, scenes: s }
     })
+  }
+
+  // Image upload handler
+  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({})
+
+  const handleImageUpload = (sceneIndex: number, file: File) => {
+    if (!file.type.startsWith('image/')) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert('ไฟล์ใหญ่เกินไป (สูงสุด 10MB)')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string
+      updateScene(sceneIndex, {
+        imageData: dataUrl,
+        imageName: file.name,
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrop = (e: React.DragEvent, sceneIndex: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const file = e.dataTransfer.files[0]
+    if (file) handleImageUpload(sceneIndex, file)
   }
 
   return (
@@ -269,6 +299,59 @@ Generate 5 scenes. Respond ONLY with a JSON array, no markdown, no backticks, no
                 placeholder="Narration script..."
                 className="w-full bg-slate-900/50 rounded-md px-2 py-1.5 text-xs text-slate-300 placeholder-slate-600 outline-none resize-none"
               />
+
+              {/* Image Upload */}
+              <div
+                onDrop={e => handleDrop(e, i)}
+                onDragOver={e => { e.preventDefault(); e.stopPropagation() }}
+                className="relative"
+              >
+                {scene.imageData ? (
+                  <div className="relative group rounded-md overflow-hidden">
+                    <img
+                      src={scene.imageData}
+                      alt={scene.title}
+                      className="w-full h-20 object-cover rounded-md"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => fileInputRefs.current[i]?.click()}
+                        className="p-1.5 bg-white/20 hover:bg-white/30 rounded-md text-white text-xs transition-colors"
+                      >
+                        เปลี่ยนรูป
+                      </button>
+                      <button
+                        onClick={() => updateScene(i, { imageData: undefined, imageName: undefined })}
+                        className="p-1.5 bg-red-500/60 hover:bg-red-500/80 rounded-md text-white transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <span className="absolute bottom-1 left-1 text-[10px] text-white/60 bg-black/50 px-1 rounded">
+                      {scene.imageName}
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRefs.current[i]?.click()}
+                    className="w-full h-16 border border-dashed border-slate-600 hover:border-violet-500/50 rounded-md flex items-center justify-center gap-2 text-slate-500 hover:text-violet-400 transition-all bg-slate-900/30 hover:bg-violet-500/5"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span className="text-xs">Upload รูปภาพ (ลากวางได้)</span>
+                  </button>
+                )}
+                <input
+                  ref={el => { fileInputRefs.current[i] = el }}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(i, file)
+                    e.target.value = ''
+                  }}
+                />
+              </div>
 
               <div className="flex gap-2 items-center flex-wrap">
                 <div className="flex items-center gap-1 text-xs text-slate-400">

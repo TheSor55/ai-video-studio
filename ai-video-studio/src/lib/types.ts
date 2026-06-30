@@ -7,9 +7,22 @@ export interface Scene {
   transition: string
   imagePrompt: string
   image?: string
+  imageData?: string  // base64 data URL from uploaded image
+  imageName?: string  // original filename
   thumbnail?: string
   animSpeed?: number
   animIntensity?: number
+}
+
+// ─── Export State ───
+export interface ExportState {
+  status: 'idle' | 'preparing' | 'rendering' | 'encoding' | 'done' | 'error'
+  progress: number
+  currentScene: number
+  totalScenes: number
+  message: string
+  downloadUrl?: string
+  error?: string
 }
 
 // ─── Brand Settings ───
