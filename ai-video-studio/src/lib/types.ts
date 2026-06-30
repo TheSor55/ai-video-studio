@@ -62,6 +62,8 @@ export interface Project {
   subtitlePosition: string
   musicCategory: string
   musicVolume: number
+  musicData?: string    // base64 data URL of uploaded music
+  musicName?: string    // original filename
   musicFadeIn: boolean
   musicFadeOut: boolean
   autoDucking: boolean

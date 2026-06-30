@@ -1,4 +1,5 @@
-import { Palette, Upload, Save, Copy } from 'lucide-react'
+import { useRef } from 'react'
+import { Palette, Upload, Save, Copy, X } from 'lucide-react'
 import { Input, Select, Btn } from '../ui'
 import type { Project, BrandSettings } from '../../lib/types'
 
@@ -9,9 +10,19 @@ interface Props {
 
 export default function BrandPanel({ project, setProject }: Props) {
   const b = project.brand
+  const logoInputRef = useRef<HTMLInputElement | null>(null)
 
   const setBrand = (updates: Partial<BrandSettings>) => {
     setProject(p => ({ ...p, brand: { ...p.brand, ...updates } }))
+  }
+
+  const handleLogoUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setBrand({ logo: e.target?.result as string })
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -43,10 +54,47 @@ export default function BrandPanel({ project, setProject }: Props) {
       </div>
 
       {/* Logo Upload */}
-      <div className="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center">
-        <Upload className="w-5 h-5 text-slate-500 mx-auto mb-1" />
-        <p className="text-xs text-slate-400">Upload Logo (PNG/SVG)</p>
-      </div>
+      {b.logo ? (
+        <div className="relative group rounded-lg overflow-hidden border border-slate-700 bg-slate-800/50 p-3 flex items-center gap-3">
+          <img src={b.logo} alt="Logo" className="w-12 h-12 object-contain rounded" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-white font-medium">Logo uploaded</p>
+            <button
+              onClick={() => logoInputRef.current?.click()}
+              className="text-[10px] text-violet-400 hover:text-violet-300"
+            >
+              เปลี่ยน
+            </button>
+          </div>
+          <button
+            onClick={() => setBrand({ logo: null })}
+            className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div
+          className="border-2 border-dashed border-slate-700 hover:border-violet-500/50 rounded-lg p-4 text-center cursor-pointer transition-colors"
+          onClick={() => logoInputRef.current?.click()}
+          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleLogoUpload(f) }}
+          onDragOver={e => { e.preventDefault() }}
+        >
+          <Upload className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+          <p className="text-xs text-slate-400">Upload Logo (PNG/SVG)</p>
+        </div>
+      )}
+      <input
+        ref={logoInputRef}
+        type="file"
+        accept="image/png,image/svg+xml,image/jpeg,image/webp"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0]
+          if (file) handleLogoUpload(file)
+          e.target.value = ''
+        }}
+      />
 
       {/* Colors */}
       <div className="grid grid-cols-2 gap-3">
